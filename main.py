@@ -6,6 +6,7 @@ from core.alerts import send
 from core.ticker_resolver import resolve_ticker
 from core.sec import get_sec_filings
 from core.news_api import get_news_api
+from core.probability import open_move_probability
 
 
 def run():
@@ -33,14 +34,14 @@ def run():
         if not company or amount < MIN_AWARD:
             continue
 
-        # 🔑 ticker match
+        # resolve ticker
         ticker = resolve_ticker(company)
 
         if not ticker:
             print(f"No ticker match: {company}")
             continue
 
-        # 📊 market data
+        # market data
         m = get_data(ticker)
 
         if not m or not m.get("mcap"):
@@ -49,7 +50,7 @@ def run():
         if not (MIN_MCAP <= m["mcap"] <= MAX_MCAP):
             continue
 
-        # 📈 premarket
+        # premarket
         pm = get_premarket_data(ticker)
 
         if not pm:
@@ -61,23 +62,21 @@ def run():
         if abs(pm["gap"]) < MIN_GAP:
             continue
 
-        # 📊 relative volume
+        # relative volume
         rel_vol = get_relative_volume(ticker)
 
         if not rel_vol or rel_vol < MIN_REL_VOL:
             continue
 
-        # 📄 SEC filings
+        # SEC + news
         sec = get_sec_filings(ticker)
-
-        # 📰 news
         news = get_news_api(company)
 
         # require at least one catalyst
         if not sec and not news:
             continue
 
-        # 🧠 scoring
+        # base score (kept for reference)
         s, r = score(
             amount,
             m["mcap"],
@@ -87,58 +86,58 @@ def run():
             m["short"]
         )
 
-        # 🚀 boosts
-        if pm["gap"] > 0.03:
-            s += 20
+        # probability model
+        prob = open_move_probability(
+            pm["gap"],
+            rel_vol,
+            amount,
+            m["mcap"],
+            m["float"],
+            m["short"],
+            bool(news),
+            bool(sec)
+        )
 
-        if pm["premarket_volume"] > 300_000:
-            s += 15
-
-        if rel_vol > 2:
-            s += 20
-        elif rel_vol > 1.5:
-            s += 10
-
-        if sec:
-            s += 25
-
-        if news:
-            s += 15
-
-        if s < 50:
+        # filter by probability
+        if prob < 60:
             continue
 
-        # 📨 message
+        # build message
         msg = f"""
-{ticker} | Score: {s}
+🚀 OPEN MOVE PROBABILITY: {prob}%
 
+Ticker: {ticker}
 Company: {company}
-Award: ${amount:,.0f}
-Impact: {r:.2%}
 
-Premarket Gap: {pm['gap']:.2%}
-Premarket Volume: {pm['premarket_volume']}
-Rel Volume: {rel_vol:.2f}x
+💰 Contract: ${amount:,.0f}
+📊 Impact Score: {r:.2%}
 
+⚡ Premarket
+Gap: {pm['gap']:.2%}
+Volume: {pm['premarket_volume']}
+Rel Vol: {rel_vol:.2f}x
+
+📰 Catalysts
 SEC Filings: {len(sec) if sec else 0}
-News: {news}
+News: {news or "None"}
 
+📉 Structure
 Float: {m['float']}
-Short: {m['short']}
-Volume: {m['vol_ratio']:.2f}x
+Short Interest: {m['short']}
+Volume Ratio: {m['vol_ratio']:.2f}x
 Price: ${m['price']:.2f}
 """
 
-        results.append((s, msg))
+        results.append((prob, msg))
 
-    # sort best setups
+    # sort highest probability first
     results.sort(reverse=True)
 
     if not results:
-        send("No strong multi-catalyst signals today")
+        send("No strong open-move candidates today")
         return
 
-    final = "🔥 TOP PRE-MARKET MOVERS\n\n"
+    final = "🔥 TOP PRE-MARKET OPEN MOVERS\n\n"
 
     for _, msg in results[:TOP_N]:
         final += msg + "\n-----\n"
