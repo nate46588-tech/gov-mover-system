@@ -28,7 +28,7 @@ def run():
         ticker = resolve_ticker(company)
 
         if not ticker:
-        continue
+            continue
        
         if amount < MIN_AWARD:
             continue
