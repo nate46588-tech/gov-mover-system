@@ -5,7 +5,13 @@ from core.market import get_data
 from core.scoring import score
 from core.alerts import send
 
-mapping = pd.read_csv("data/company_map.csv")
+from core.ticker_resolver import resolve_ticker
+
+ticker = resolve_ticker(company)
+
+if not ticker:
+    continue
+    
 mapping["company"] = mapping["company"].str.upper().str.strip()
 
 def run():
@@ -18,15 +24,15 @@ def run():
     for x in data:
         company = x.get("Recipient Name", "").upper().strip()
         amount = x.get("Award Amount", 0)
+        
+        ticker = resolve_ticker(company)
 
+        if not ticker:
+        continue
+       
         if amount < MIN_AWARD:
             continue
 
-        match = mapping[mapping["company"] == company]
-        if match.empty:
-            continue
-
-        ticker = match.iloc[0]["ticker"]
 
         m = get_data(ticker)
         if not m or not m["mcap"]:
