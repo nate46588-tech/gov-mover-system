@@ -33,7 +33,6 @@ def run():
         if amount < MIN_AWARD:
             continue
 
-
         m = get_data(ticker)
         if not m or not m["mcap"]:
             continue
