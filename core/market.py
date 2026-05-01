@@ -1,24 +1,44 @@
 import yfinance as yf
 
-def get_data(ticker):
+def get_premarket_data(ticker):
     try:
         stock = yf.Ticker(ticker)
-        info = stock.info
-        hist = stock.history(period="10d")
 
-        if hist.empty:
+        hist = stock.history(period="2d", interval="5m", prepost=True)
+
+        if hist is None or hist.empty:
             return None
 
-        avg_vol = hist["Volume"][:-1].mean()
-        vol_ratio = hist["Volume"].iloc[-1] / avg_vol if avg_vol else 0
+        latest = hist.iloc[-1]
+        prev_close = hist["Close"].iloc[0]
+
+        price = latest["Close"]
+        volume = hist["Volume"].sum()
+
+        gap = (price - prev_close) / prev_close if prev_close else 0
 
         return {
-            "mcap": info.get("marketCap"),
-            "float": info.get("floatShares"),
-            "short": info.get("shortPercentOfFloat"),
-            "avg_vol": avg_vol,
-            "vol_ratio": vol_ratio,
-            "price": hist["Close"].iloc[-1]
+            "premarket_price": price,
+            "premarket_volume": volume,
+            "gap": gap
         }
+
+    except:
+        return None
+
+
+def get_relative_volume(ticker):
+    try:
+        stock = yf.Ticker(ticker)
+        hist = stock.history(period="30d")
+
+        if hist is None or hist.empty:
+            return None
+
+        avg_vol = hist["Volume"].mean()
+        today_vol = hist["Volume"].iloc[-1]
+
+        return today_vol / avg_vol if avg_vol else 0
+
     except:
         return None
