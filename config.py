@@ -3,7 +3,7 @@ TELEGRAM_TOKEN = "your_telegram_bot_token"
 TELEGRAM_CHAT_ID = "your_chat_id"
 
 # ===== NEWS API =====
-NEWS_API_KEY = "your_newsapi_key"
+NEWS_API_KEY = os.getenv("NEWS_API_KEY") 
 
 # ===== FILTERS =====
 MIN_AWARD = 50_000_000      # minimum contract size
