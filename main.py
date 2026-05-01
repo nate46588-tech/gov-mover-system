@@ -4,42 +4,47 @@ from core.contracts import fetch_awards
 from core.market import get_data
 from core.scoring import score
 from core.alerts import send
-
 from core.ticker_resolver import resolve_ticker
 
-ticker = resolve_ticker(company)
-
-if not ticker:
-    continue
-    
-mapping["company"] = mapping["company"].str.upper().str.strip()
 
 def run():
     data = fetch_awards()
 
-    data = sorted(data, key=lambda x: x.get("Award Amount", 0), reverse=True)
+    if not data:
+        send("No data from USAspending")
+        return
+
+    # Sort largest contracts first
+    data = sorted(data, key=lambda x: x.get("Award Amount", x.get("award_amount", 0)), reverse=True)
 
     results = []
 
     for x in data:
-        company = x.get("Recipient Name", "").upper().strip()
-        amount = x.get("Award Amount", 0)
-        
+
+        # Handle API field variations
+        company = (x.get("Recipient Name") or x.get("recipient_name") or "").upper().strip()
+        amount = x.get("Award Amount") or x.get("award_amount") or 0
+
+        if not company or amount < MIN_AWARD:
+            continue
+
+        # 🔑 AUTO TICKER RESOLUTION
         ticker = resolve_ticker(company)
 
         if not ticker:
-            continue
-       
-        if amount < MIN_AWARD:
+            print(f"No ticker match: {company}")
             continue
 
+        # 📊 Market data
         m = get_data(ticker)
-        if not m or not m["mcap"]:
+
+        if not m or not m.get("mcap"):
             continue
 
         if not (MIN_MCAP <= m["mcap"] <= MAX_MCAP):
             continue
 
+        # 🧠 Scoring
         s, r = score(
             amount,
             m["mcap"],
@@ -55,6 +60,7 @@ def run():
         msg = f"""
 {ticker} | Score: {s}
 
+Company: {company}
 Award: ${amount:,.0f}
 Impact: {r:.2%}
 
@@ -66,6 +72,7 @@ Price: ${m['price']:.2f}
 
         results.append((s, msg))
 
+    # 📈 Sort best signals
     results.sort(reverse=True)
 
     if not results:
@@ -78,6 +85,7 @@ Price: ${m['price']:.2f}
         final += msg + "\n-----\n"
 
     send(final)
+
 
 if __name__ == "__main__":
     run()
