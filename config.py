@@ -1,20 +1,32 @@
-# ===== TELEGRAM =====
-TELEGRAM_TOKEN = "your_telegram_bot_token"
-TELEGRAM_CHAT_ID = "your_chat_id"
+import os
 
-# ===== NEWS API =====
-NEWS_API_KEY = os.getenv("NEWS_API_KEY") 
+# ======================
+# TELEGRAM (alerts)
+# ======================
+TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
+TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
 
-# ===== FILTERS =====
-MIN_AWARD = 50_000_000      # minimum contract size
-MIN_MCAP = 100_000_000     # 100M
-MAX_MCAP = 10_000_000_000  # 10B
+# ======================
+# NEWS API
+# ======================
+NEWS_API_KEY = os.getenv("NEWS_API_KEY")
 
-TOP_N = 5                  # number of alerts to send
+# ======================
+# CORE FILTERS
+# ======================
+MIN_AWARD = 50_000_000       # minimum contract size ($50M)
+MIN_MCAP = 100_000_000       # $100M
+MAX_MCAP = 10_000_000_000    # $10B (small/mid cap focus)
 
-# ===== PREMARKET FILTERS =====
+TOP_N = 5                    # number of alerts sent daily
+
+# ======================
+# PREMARKET FILTERS
+# ======================
 MIN_PREMARKET_VOLUME = 100_000
-MIN_GAP = 0.02
+MIN_GAP = 0.02               # 2% move minimum
 
-# ===== RELATIVE VOLUME =====
-MIN_REL_VOL = 1.5
+# ======================
+# VOLUME FILTERS
+# ======================
+MIN_REL_VOL = 1.5            # relative volume threshold
