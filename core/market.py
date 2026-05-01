@@ -1,18 +1,10 @@
 import yfinance as yf
 
 
-# =========================
-# BASIC MARKET DATA
-# =========================
 def get_data(ticker):
-    """
-    Core stock fundamentals:
-    price, market cap, float, short interest, volume
-    """
     try:
         stock = yf.Ticker(ticker)
         info = stock.info
-
         hist = stock.history(period="5d")
 
         if not info:
@@ -41,13 +33,7 @@ def get_data(ticker):
         return None
 
 
-# =========================
-# PREMARKET DATA
-# =========================
 def get_premarket_data(ticker):
-    """
-    Detect premarket gap + volume
-    """
     try:
         stock = yf.Ticker(ticker)
 
@@ -74,13 +60,7 @@ def get_premarket_data(ticker):
         return None
 
 
-# =========================
-# RELATIVE VOLUME
-# =========================
 def get_relative_volume(ticker):
-    """
-    Measures abnormal trading activity
-    """
     try:
         stock = yf.Ticker(ticker)
         hist = stock.history(period="30d")
