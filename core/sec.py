@@ -1,9 +1,6 @@
 import requests
 
 def get_sec_filings(ticker):
-    """
-    Pull recent SEC filings (focus on 8-K)
-    """
     try:
         url = f"https://data.sec.gov/submissions/CIK{ticker}.json"
 
@@ -28,7 +25,7 @@ def get_sec_filings(ticker):
                     "date": dates[i]
                 })
 
-        return results[:3]  # latest few
+        return results[:3]
 
     except:
         return []
